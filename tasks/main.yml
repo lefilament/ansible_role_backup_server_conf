@@ -1,0 +1,91 @@
+---
+
+- name: Create SFTP group
+  group:
+    name: sftpgroup
+
+- name: Create SFTP users
+  user:
+    name: "{{ hostvars[item].backup_sftp_user }}"
+    group: sftpgroup
+    password: "!"
+    shell: /sbin/nologin
+  with_items: "{{ groups.all | difference(groups.backup_server) }}"
+
+- name: add SFTP users public key to authorized keys
+  authorized_key:
+    key: "{{ hostvars[item].host_user_public_key }}"
+    user: "{{ hostvars[item].backup_sftp_user }}"
+    exclusive: true
+  with_items: "{{ groups.all | difference(groups.backup_server) }}"
+
+- name: Copy sshd_config file
+  template:
+    src: ../init_server/templates/sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart-sshd
+  tags: sshd
+
+- name: add pip package
+  apt:
+    name: "{{ python_apt_packages }}"
+    force: true
+    install_recommends: false
+
+- name: check that chroot directory for SFTP users exist
+  file:
+    name: /backup/sftp
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: check that directories for SFTP for all servers exist
+  file:
+    name: /backup/sftp/{{ hostvars[item].inventory_hostname | lower }}
+    state: directory
+    owner: "{{  hostvars[item].backup_sftp_user }}"
+    group: sftpgroup
+    mode: '0755'
+  with_items: "{{ groups.all | difference(groups.backup_server) }}"
+
+- name: check that directory for collecting openstack Cloud facts exists
+  file:
+    name: /backup/{{ item }}
+    state: directory
+    owner: lefilament
+    group: lefilament
+    mode: '0755'
+  with_items:
+    - cloud
+    - odoo
+    - odoo2
+    - versions
+
+- name: install swift client
+  pip:
+    name: "{{ swift_pip_packages }}"
+
+- name: Copy OpenStack Fact Collection scripts on server
+  template:
+    src: "{{ item.script }}.j2"
+    dest: /root/{{ item.script }}
+    owner: root
+    group: root
+    mode: '0700'
+  with_items: '{{ collect_backups }}'
+  loop_control:
+    label: '{{ item.name }}'
+
+- name: add cron job to retrieve backup list every day
+  cron:
+    name: "{{ item.name }}"
+    minute: "{{ item.minute }}"
+    hour: "{{ item.hour }}"
+    job: /root/{{ item.script }}
+  with_items: '{{ collect_backups }}'
+  loop_control:
+    label: '{{ item.name }}'

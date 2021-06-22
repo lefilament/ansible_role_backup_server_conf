@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Copyright © 2019 Le Filament (<http://www.le-filament.com>)
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
+
+
+# Configure variables
+export OS_AUTH_URL="{{ swift_odoo2_authurl }}"
+export OS_IDENTITY_API_VERSION={{ swift_odoo2_authversion }}
+export OS_TENANT_ID="{{ swift_odoo2_tenantid }}"
+export OS_TENANT_NAME="{{ swift_odoo2_tenantname }}"
+export OS_USERNAME="{{ swift_odoo2_username }}"
+export OS_PASSWORD="{{ swift_odoo2_password }}"
+export OS_REGION_NAME="{{ swift_odoo2_regionname }}"
+
+TODAY=`date +%F`
+
+for container in `/usr/local/bin/swift list`
+do
+    file="/backup/odoo2/$container.$TODAY"
+    printf "DATE = $TODAY"  > $file
+    printf "\n\n-- STATS --\n" >>  $file
+    /usr/local/bin/swift stat --lh $container >> $file
+    printf "\n\n-- LIST FILES --\n" >> $file
+    /usr/local/bin/swift list --lh $container >> $file
+    cp $file /backup/odoo2/$container.latest
+    chmod 644 $file /backup/odoo2/$container.latest
+done

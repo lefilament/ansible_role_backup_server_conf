@@ -1,0 +1,26 @@
+---
+## Parameters for listing backups stored on Object Storage - for Cloud
+swift_cloud_authurl: https://auth.cloud.ovh.net/v3/
+swift_cloud_authversion: 3
+swift_cloud_tenantid: "12f1e"
+swift_cloud_tenantname: "2214534534"
+swift_cloud_username: "testuser"
+swift_cloud_password: "testpassword"
+swift_cloud_regionname: GRA
+
+## Parameters for listing backups stored on Object Storage - for Odoo
+swift_odoo_authurl: https://auth.cloud.ovh.net/v3/
+swift_odoo_authversion: 3
+swift_odoo_tenantid: "132e1fa"
+swift_odoo_tenantname: "12312534534"
+swift_odoo_username: "testuser"
+swift_odoo_password: "testpassword"
+swift_odoo_regionname: "GRA"
+## Parameters for listing backups stored on Object Storage - for Odoo (2nd backup)
+swift_odoo2_authurl: https://auth.cloud.ovh.net/v3/
+swift_odoo2_authversion: 3
+swift_odoo2_tenantid: "12323534ab"
+swift_odoo2_tenantname: "123124235345"
+swift_odoo2_username: "testuser"
+swift_odoo2_password: "testpassword"
+swift_odoo2_regionname: "DE"
