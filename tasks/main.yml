@@ -19,9 +19,9 @@
     exclusive: true
   with_items: "{{ groups.all | difference(groups.backup_server) }}"
 
-- name: Copy sshd_config file
-  template:
-    src: ../init_server/templates/sshd_config.j2
+- name: Get sshd_config file from init_server role
+  get_url:
+    url: "https://sources.le-filament.com/lefilament/ansible-roles/init_server/-/raw/master/templates/sshd_config.j2"
     dest: /etc/ssh/sshd_config
     owner: root
     group: root
