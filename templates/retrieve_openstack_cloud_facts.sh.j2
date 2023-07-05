@@ -13,10 +13,11 @@ export OS_USERNAME="{{ swift_cloud_username }}"
 export OS_PASSWORD="{{ swift_cloud_password }}"
 export OS_REGION_NAME="{{ swift_cloud_regionname }}"
 
-TODAY=`date +%F`
+TODAY=`date --utc +%F`
 
 for container in `/usr/local/bin/swift list`
 do
+    [[ "$container" == *'_segments' ]] && continue
     file="/backup/cloud/$container.$TODAY"
     printf "DATE = $TODAY"  > $file
     printf "\n\n-- STATS --\n" >>  $file

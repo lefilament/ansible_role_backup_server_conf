@@ -1,91 +1,111 @@
 ---
 
 - name: Create SFTP group
-  group:
-    name: sftpgroup
+  ansible.builtin.group:
+      name: sftpgroup
 
 - name: Create SFTP users
-  user:
-    name: "{{ hostvars[item].backup_sftp_user }}"
-    group: sftpgroup
-    password: "!"
-    shell: /sbin/nologin
+  ansible.builtin.user:
+      name: "{{ hostvars[item].backup_sftp_user }}"
+      group: sftpgroup
+      password: "!"
+      shell: /sbin/nologin
   with_items: "{{ groups.all | difference(groups.backup_server) }}"
 
-- name: add SFTP users public key to authorized keys
-  authorized_key:
-    key: "{{ hostvars[item].host_user_public_key }}"
-    user: "{{ hostvars[item].backup_sftp_user }}"
-    exclusive: true
+- name: Add SFTP users public key to authorized keys
+  ansible.posix.authorized_key:
+      key: "{{ hostvars[item].host_user_public_key }}"
+      user: "{{ hostvars[item].backup_sftp_user }}"
+      exclusive: true
   with_items: "{{ groups.all | difference(groups.backup_server) }}"
 
-- name: Get sshd_config file from init_server role
-  get_url:
-    url: "https://sources.le-filament.com/lefilament/ansible-roles/init_server/-/raw/master/templates/sshd_config.j2"
-    dest: /etc/ssh/sshd_config
-    owner: root
-    group: root
-    mode: '0644'
-  notify: restart-sshd
+- name: Create templates directory
+  ansible.builtin.file:
+      name: templates
+      state: directory
+      mode: '0755'
+  connection: local
+  become: false
+  delegate_to: localhost
   tags: sshd
 
-- name: add pip package
-  apt:
-    name: "{{ python_apt_packages }}"
-    force: true
-    install_recommends: false
+- name: Get sshd_config file from init_server role locally
+  ansible.builtin.get_url:
+      url: "https://sources.le-filament.com/lefilament/ansible-roles/init_server/-/raw/master/templates/sshd_config.j2"
+      dest: templates/sshd_config.j2
+      mode: '0644'
+  connection: local
+  become: false
+  delegate_to: localhost
+  tags: sshd
 
-- name: check that chroot directory for SFTP users exist
-  file:
-    name: /backup/sftp
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
+- name: Copy sshd_config file
+  ansible.builtin.template:
+      src: templates/sshd_config.j2
+      dest: /etc/ssh/sshd_config
+      owner: root
+      group: root
+      mode: '0644'
+  notify: Restart SSHD
+  tags: sshd
 
-- name: check that directories for SFTP for all servers exist
-  file:
-    name: /backup/sftp/{{ hostvars[item].inventory_hostname | lower }}
-    state: directory
-    owner: "{{  hostvars[item].backup_sftp_user }}"
-    group: sftpgroup
-    mode: '0755'
+- name: Add pip package
+  ansible.builtin.apt:
+      name: "{{ python_apt_packages }}"
+      force: true
+      install_recommends: false
+
+- name: Check that chroot directory for SFTP users exist
+  ansible.builtin.file:
+      name: /backup/sftp
+      state: directory
+      owner: root
+      group: root
+      mode: '0755'
+
+- name: Check that directories for SFTP for all servers exist
+  ansible.builtin.file:
+      name: /backup/sftp/{{ hostvars[item].inventory_hostname | lower }}
+      state: directory
+      owner: "{{  hostvars[item].backup_sftp_user }}"
+      group: sftpgroup
+      mode: '0755'
   with_items: "{{ groups.all | difference(groups.backup_server) }}"
 
-- name: check that directory for collecting openstack Cloud facts exists
-  file:
-    name: /backup/{{ item }}
-    state: directory
-    owner: lefilament
-    group: lefilament
-    mode: '0755'
+- name: Check that directory for collecting openstack Cloud facts exists
+  ansible.builtin.file:
+      name: /backup/{{ item }}
+      state: directory
+      owner: lefilament
+      group: lefilament
+      mode: '0755'
   with_items:
-    - cloud
-    - odoo
-    - odoo2
-    - versions
+      - cloud
+      - odoo
+      - odoo2
+      - versions
 
-- name: install swift client
-  pip:
-    name: "{{ swift_pip_packages }}"
+- name: Install swift client
+  ansible.builtin.pip:
+      name: "{{ swift_pip_packages }}"
 
 - name: Copy OpenStack Fact Collection scripts on server
-  template:
-    src: "{{ item.script }}.j2"
-    dest: /root/{{ item.script }}
-    owner: root
-    group: root
-    mode: '0700'
+  ansible.builtin.template:
+      src: "{{ item.script }}.j2"
+      dest: /root/{{ item.script }}
+      owner: root
+      group: root
+      mode: '0700'
   with_items: '{{ collect_backups }}'
   loop_control:
-    label: '{{ item.name }}'
+      label: '{{ item.name }}'
 
-- name: add cron job to retrieve backup list every day
-  cron:
-    name: "{{ item.name }}"
-    minute: "{{ item.minute }}"
-    hour: "{{ item.hour }}"
-    job: /root/{{ item.script }}
+- name: Add cron job to retrieve backup list every day
+  ansible.builtin.cron:
+      name: "{{ item.name }}"
+      minute: "{{ item.minute }}"
+      hour: "{{ item.hour }}"
+      job: /root/{{ item.script }}
   with_items: '{{ collect_backups }}'
   loop_control:
-    label: '{{ item.name }}'
+      label: '{{ item.name }}'

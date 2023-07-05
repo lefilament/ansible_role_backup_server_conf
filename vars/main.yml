@@ -1,28 +1,28 @@
 ---
 python_apt_packages:
-  - python3-pip
-  - python3-dev
-  - python3-setuptools
-  - python3-wheel
+    - python3-pip
+    - python3-dev
+    - python3-setuptools
+    - python3-wheel
 
 swift_pip_packages:
-  - python-swiftclient
-  - python-keystoneclient
+    - python-swiftclient
+    - python-keystoneclient
 
 collect_backups:
-  - name: "check openstack cloud facts"
-    script: retrieve_openstack_cloud_facts.sh
-    hour: 6
-    minute: 43
-  - name: "check openstack odoo facts"
-    script: retrieve_openstack_odoo_facts.sh
-    hour: 6
-    minute: 13
-  - name: "check openstack odoo2 facts"
-    script: retrieve_openstack_odoo2_facts.sh
-    hour: 8
-    minute: 33
-  - name: "move versioned files"
-    script: move_versioned_files.sh
-    hour: 3
-    minute: 43
+    - name: "check openstack cloud facts"
+      script: retrieve_openstack_cloud_facts.sh
+      hour: 4
+      minute: 30
+    - name: "check openstack odoo facts"
+      script: retrieve_openstack_odoo_facts.sh
+      hour: 4
+      minute: 45
+    - name: "check openstack odoo2 facts"
+      script: retrieve_openstack_odoo2_facts.sh
+      hour: 2
+      minute: 0
+    - name: "move versioned files"
+      script: move_versioned_files.sh
+      hour: 7
+      minute: 0
